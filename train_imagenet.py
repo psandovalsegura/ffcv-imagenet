@@ -62,6 +62,7 @@ Section('lr', 'lr scheduling').params(
 
 Section('logging', 'how to log stuff').params(
     folder=Param(str, 'log location', required=True),
+    subfolder_id=Param(str, 'subfolder id', default=str(uuid4())),
     log_level=Param(int, '0 if only at end 1 otherwise', default=1)
 )
 
@@ -130,8 +131,6 @@ class ImageNetTrainer:
     def __init__(self, gpu, distributed):
         self.all_params = get_current_config()
         self.gpu = gpu
-
-        self.uid = str(uuid4())
 
         if distributed:
             self.setup_distributed()
@@ -309,7 +308,8 @@ class ImageNetTrainer:
 
         self.eval_and_log({'epoch':epoch})
         if self.gpu == 0:
-            ch.save(self.model.state_dict(), self.log_folder / 'final_weights.pt')
+            ckpt_path = self.log_folder / 'final_weights.pt'
+            ch.save(self.model.state_dict(), ckpt_path)
 
     def eval_and_log(self, extra_dict={}):
         start_val = time.time()
@@ -414,15 +414,16 @@ class ImageNetTrainer:
         return stats
 
     @param('logging.folder')
-    def initialize_logger(self, folder):
+    @param('logging.subfolder_id')
+    def initialize_logger(self, folder, subfolder_id):
         self.val_meters = {
-            'top_1': torchmetrics.Accuracy(compute_on_step=False).to(self.gpu),
-            'top_5': torchmetrics.Accuracy(compute_on_step=False, top_k=5).to(self.gpu),
+            'top_1': torchmetrics.Accuracy(task='multiclass', num_classes=1000, compute_on_step=False).to(self.gpu),
+            'top_5': torchmetrics.Accuracy(task='multiclass', num_classes=1000, compute_on_step=False, top_k=5).to(self.gpu),
             'loss': MeanScalarMetric(compute_on_step=False).to(self.gpu)
         }
 
         if self.gpu == 0:
-            folder = (Path(folder) / str(self.uid)).absolute()
+            folder = (Path(folder) / subfolder_id).absolute()
             folder.mkdir(parents=True)
 
             self.log_folder = folder
@@ -440,10 +441,12 @@ class ImageNetTrainer:
         print(f'=> Log: {content}')
         if self.gpu != 0: return
         cur_time = time.time()
+        readable_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(cur_time))
+        readable_elapsed_time = time.strftime('%H:%M:%S', time.gmtime(cur_time - self.start_time))
         with open(self.log_folder / 'log', 'a+') as fd:
             fd.write(json.dumps({
-                'timestamp': cur_time,
-                'relative_time': cur_time - self.start_time,
+                'timestamp': readable_time,
+                'elapsed_time': readable_elapsed_time,
                 **content
             }) + '\n')
             fd.flush()

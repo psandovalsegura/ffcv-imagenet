@@ -9,6 +9,7 @@ write_dataset () {
         --cfg.data_dir=$IMAGENET_DIR/${1} \
         --cfg.write_path=$write_path \
         --cfg.max_resolution=${2} \
+        --cfg.num_workers=4 \
         --cfg.write_mode=proportion \
         --cfg.compress_probability=${3} \
         --cfg.jpeg_quality=$4
