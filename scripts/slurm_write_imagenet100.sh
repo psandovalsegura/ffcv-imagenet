@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --account=vulcan-djacobs
-#SBATCH --job-name=write-ffcv-imagenet
+#SBATCH --job-name=write-ffcv-imagenet100
 #SBATCH --time=1-12:00:00
 #SBATCH --partition=vulcan-dpart
 #SBATCH --qos=vulcan-medium
@@ -16,7 +16,9 @@
 #--SBATCH --mem-per-cpu=4G
 
 export IMAGENET_DIR=/fs/vulcan-datasets/imagenet
-export WRITE_DIR=/fs/vulcan-projects/stereo-detection/imagenet-ffcv
+export WRITE_DIR=/vulcanscratch/psando/imagenet100-ffcv
+
+# Note: To write ImageNet100, you also have to modify write_imagenet.sh and pass --cfg.dataset=imagenet100
 
 module add gcc/11.2.0
 # Serialize images with:

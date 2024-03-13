@@ -9,8 +9,10 @@ from fastargs.validation import And, OneOf
 from fastargs.decorators import param, section
 from fastargs import get_current_config
 
+from imagenet100 import ImageNet100Folder
+
 Section('cfg', 'arguments to give the writer').params(
-    dataset=Param(And(str, OneOf(['cifar', 'imagenet'])), 'Which dataset to write', default='imagenet'),
+    dataset=Param(And(str, OneOf(['cifar', 'imagenet', 'imagenet100'])), 'Which dataset to write', default='imagenet'),
     split=Param(And(str, OneOf(['train', 'val'])), 'Train or val set', required=True),
     data_dir=Param(str, 'Where to find the PyTorch dataset', required=True),
     write_path=Param(str, 'Where to write the new dataset', required=True),
@@ -42,6 +44,10 @@ def main(dataset, split, data_dir, write_path, max_resolution, num_workers,
         my_dataset = CIFAR10(root=data_dir, train=(split == 'train'), download=True)
     elif dataset == 'imagenet':
         my_dataset = ImageFolder(root=data_dir)
+    elif dataset == 'imagenet100':
+        # a subset of ImageNet which contains the first 100 classes
+        my_dataset = ImageNet100Folder(root=data_dir)
+        print(f'Using ImageNet100Folder with len(self.samples)={len(my_dataset.samples)}\n\tlen(self.imgs)={len(my_dataset.imgs)}\n\tlen(self.classes)={len(my_dataset.classes)}')
     else:
         raise ValueError('Unrecognized dataset', dataset)
 
